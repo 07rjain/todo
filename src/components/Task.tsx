@@ -58,14 +58,26 @@ export default function Task({ task, todoId, onUpdate }: TaskProps) {
   const completedSubtasks = task.subtasks.filter((s) => s.completed).length;
 
   return (
-    <div className="border-l-2 border-gray-200 pl-3 py-2">
-      <div className="flex items-center gap-2 group">
-        <input
-          type="checkbox"
-          checked={task.completed}
-          onChange={handleToggleComplete}
-          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-        />
+    <div className="group/task">
+      {/* Task Row */}
+      <div className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-lg hover:bg-slate-50 transition-colors">
+        {/* Checkbox */}
+        <button
+          onClick={handleToggleComplete}
+          className={`flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+            task.completed 
+              ? 'bg-purple-600 border-purple-600' 
+              : 'border-slate-300 hover:border-purple-400'
+          }`}
+        >
+          {task.completed && (
+            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+        </button>
+
+        {/* Title */}
         {isEditing ? (
           <input
             type="text"
@@ -73,40 +85,49 @@ export default function Task({ task, todoId, onUpdate }: TaskProps) {
             onChange={(e) => setTitle(e.target.value)}
             onBlur={handleUpdate}
             onKeyDown={(e) => e.key === "Enter" && handleUpdate()}
-            className="flex-1 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-2 py-1 text-sm bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             autoFocus
           />
         ) : (
           <span
-            className={`flex-1 cursor-pointer ${
-              task.completed ? "line-through text-gray-400" : "text-gray-700"
+            className={`flex-1 text-sm cursor-pointer transition-colors ${
+              task.completed 
+                ? "line-through text-slate-400" 
+                : "text-slate-700 hover:text-slate-900"
             }`}
             onClick={() => setIsEditing(true)}
           >
             {task.title}
           </span>
         )}
+
+        {/* Subtask Count Badge */}
         {task.subtasks.length > 0 && (
-          <span className="text-xs text-gray-400">
+          <button
+            onClick={() => setShowSubtasks(!showSubtasks)}
+            className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"
+          >
+            <svg className={`w-3 h-3 transition-transform ${showSubtasks ? 'rotate-0' : '-rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
             {completedSubtasks}/{task.subtasks.length}
-          </span>
+          </button>
         )}
-        <button
-          onClick={() => setShowSubtasks(!showSubtasks)}
-          className="text-gray-400 hover:text-gray-600 text-sm px-1"
-        >
-          {showSubtasks ? "-" : "+"}
-        </button>
+
+        {/* Delete Button */}
         <button
           onClick={handleDelete}
-          className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 text-sm px-1"
+          className="flex-shrink-0 p-1 opacity-0 group-hover/task:opacity-100 text-slate-400 hover:text-red-500 rounded transition-all"
         >
-          x
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
         </button>
       </div>
 
+      {/* Subtasks */}
       {showSubtasks && (
-        <div className="mt-1">
+        <div className="ml-8 pl-3 border-l-2 border-slate-100">
           {task.subtasks.map((subtask) => (
             <Subtask
               key={subtask.id}
@@ -116,13 +137,15 @@ export default function Task({ task, todoId, onUpdate }: TaskProps) {
               onUpdate={onUpdate}
             />
           ))}
-          <form onSubmit={handleAddSubtask} className="pl-8 mt-1">
+          
+          {/* Add Subtask Form */}
+          <form onSubmit={handleAddSubtask} className="py-1">
             <input
               type="text"
               value={newSubtask}
               onChange={(e) => setNewSubtask(e.target.value)}
               placeholder="Add subtask..."
-              className="w-full px-2 py-1 text-sm border border-dashed border-gray-300 rounded focus:outline-none focus:border-blue-500"
+              className="w-full px-2 py-1.5 text-xs text-slate-600 bg-transparent border-none placeholder:text-slate-400 focus:outline-none focus:bg-slate-50 rounded transition-colors"
             />
           </form>
         </div>

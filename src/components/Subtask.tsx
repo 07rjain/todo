@@ -42,13 +42,24 @@ export default function Subtask({ subtask, todoId, taskId, onUpdate }: SubtaskPr
   };
 
   return (
-    <div className="flex items-center gap-2 py-1 pl-8 group">
-      <input
-        type="checkbox"
-        checked={subtask.completed}
-        onChange={handleToggleComplete}
-        className="w-3 h-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-      />
+    <div className="group/subtask flex items-center gap-2 py-1.5 px-1 -mx-1 rounded hover:bg-slate-50 transition-colors">
+      {/* Checkbox */}
+      <button
+        onClick={handleToggleComplete}
+        className={`flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
+          subtask.completed 
+            ? 'bg-purple-500 border-purple-500' 
+            : 'border-slate-300 hover:border-purple-400'
+        }`}
+      >
+        {subtask.completed && (
+          <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+          </svg>
+        )}
+      </button>
+
+      {/* Title */}
       {isEditing ? (
         <input
           type="text"
@@ -56,24 +67,30 @@ export default function Subtask({ subtask, todoId, taskId, onUpdate }: SubtaskPr
           onChange={(e) => setTitle(e.target.value)}
           onBlur={handleUpdate}
           onKeyDown={(e) => e.key === "Enter" && handleUpdate()}
-          className="flex-1 px-1 py-0.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="flex-1 px-1.5 py-0.5 text-xs bg-white border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           autoFocus
         />
       ) : (
         <span
-          className={`flex-1 text-sm cursor-pointer ${
-            subtask.completed ? "line-through text-gray-400" : "text-gray-600"
+          className={`flex-1 text-xs cursor-pointer transition-colors ${
+            subtask.completed 
+              ? "line-through text-slate-400" 
+              : "text-slate-600 hover:text-slate-800"
           }`}
           onClick={() => setIsEditing(true)}
         >
           {subtask.title}
         </span>
       )}
+
+      {/* Delete Button */}
       <button
         onClick={handleDelete}
-        className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 text-xs px-1"
+        className="flex-shrink-0 p-0.5 opacity-0 group-hover/subtask:opacity-100 text-slate-400 hover:text-red-500 rounded transition-all"
       >
-        x
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
       </button>
     </div>
   );
