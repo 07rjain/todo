@@ -8,12 +8,23 @@ export default function TodoList() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchTodos = async () => {
-    const response = await fetch("/api/todos");
-    const data = await response.json();
-    setTodos(data);
-    setLoading(false);
+    try {
+      const response = await fetch("/api/todos");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setTodos(data);
+      setError(null);
+    } catch (err) {
+      console.error("Failed to fetch todos:", err);
+      setError("Failed to load todos. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -40,6 +51,26 @@ export default function TodoList() {
           <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
           <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce"></div>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-16">
+        <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+          <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-medium text-slate-900 mb-1">Something went wrong</h3>
+        <p className="text-slate-500 mb-4">{error}</p>
+        <button
+          onClick={() => { setLoading(true); setError(null); fetchTodos(); }}
+          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors"
+        >
+          Try again
+        </button>
       </div>
     );
   }
