@@ -1,39 +1,30 @@
-import fs from "fs";
-import path from "path";
+import { kv } from "@vercel/kv";
 import { Todo } from "@/types/todo";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-
-// Ensure data directory exists
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-}
-
-// Get file path for a user's todos
-function getUserFilePath(userId: string): string {
-  return path.join(DATA_DIR, `${userId}.json`);
+// Key prefix for user todos
+function getUserKey(userId: string): string {
+  return `todos:${userId}`;
 }
 
 // Read all todos for a user
-export function getUserTodos(userId: string): Todo[] {
-  ensureDataDir();
-  const filePath = getUserFilePath(userId);
-  
-  if (!fs.existsSync(filePath)) {
+export async function getUserTodos(userId: string): Promise<Todo[]> {
+  try {
+    const todos = await kv.get<Todo[]>(getUserKey(userId));
+    return todos || [];
+  } catch (error) {
+    console.error("Error reading todos from KV:", error);
     return [];
   }
-  
-  const data = fs.readFileSync(filePath, "utf-8");
-  return JSON.parse(data);
 }
 
 // Save todos for a user
-export function saveUserTodos(userId: string, todos: Todo[]): void {
-  ensureDataDir();
-  const filePath = getUserFilePath(userId);
-  fs.writeFileSync(filePath, JSON.stringify(todos, null, 2));
+export async function saveUserTodos(userId: string, todos: Todo[]): Promise<void> {
+  try {
+    await kv.set(getUserKey(userId), todos);
+  } catch (error) {
+    console.error("Error saving todos to KV:", error);
+    throw error;
+  }
 }
 
 // Generate unique ID
