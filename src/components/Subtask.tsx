@@ -1,44 +1,41 @@
 "use client";
 
 import { useState } from "react";
-import { Subtask as SubtaskType } from "@/types/todo";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
+
+interface SubtaskType {
+  id: Id<"subtasks">;
+  title: string;
+  completed: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface SubtaskProps {
   subtask: SubtaskType;
-  todoId: string;
-  taskId: string;
-  onUpdate: () => void;
 }
 
-export default function Subtask({ subtask, todoId, taskId, onUpdate }: SubtaskProps) {
+export default function Subtask({ subtask }: SubtaskProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(subtask.title);
 
+  const updateSubtask = useMutation(api.todos.updateSubtask);
+  const deleteSubtask = useMutation(api.todos.deleteSubtask);
+
   const handleToggleComplete = async () => {
-    await fetch(`/api/todos/${todoId}/tasks/${taskId}/subtasks/${subtask.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ completed: !subtask.completed }),
-    });
-    onUpdate();
+    await updateSubtask({ subtaskId: subtask.id, completed: !subtask.completed });
   };
 
   const handleUpdate = async () => {
     if (!title.trim()) return;
-    await fetch(`/api/todos/${todoId}/tasks/${taskId}/subtasks/${subtask.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title }),
-    });
+    await updateSubtask({ subtaskId: subtask.id, title });
     setIsEditing(false);
-    onUpdate();
   };
 
   const handleDelete = async () => {
-    await fetch(`/api/todos/${todoId}/tasks/${taskId}/subtasks/${subtask.id}`, {
-      method: "DELETE",
-    });
-    onUpdate();
+    await deleteSubtask({ subtaskId: subtask.id });
   };
 
   return (

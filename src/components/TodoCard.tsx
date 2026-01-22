@@ -1,49 +1,65 @@
 "use client";
 
 import { useState } from "react";
-import { Todo } from "@/types/todo";
+import { useMutation } from "convex/react";
+import { useAuth } from "@clerk/nextjs";
+import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
 import Task from "./Task";
 
-interface TodoCardProps {
-  todo: Todo;
-  onUpdate: () => void;
+interface TodoType {
+  id: Id<"todos">;
+  userId: string;
+  title: string;
+  tasks: {
+    id: Id<"tasks">;
+    title: string;
+    completed: boolean;
+    subtasks: {
+      id: Id<"subtasks">;
+      title: string;
+      completed: boolean;
+      createdAt: string;
+      updatedAt: string;
+    }[];
+    createdAt: string;
+    updatedAt: string;
+  }[];
+  createdAt: string;
+  updatedAt: string;
 }
 
-export default function TodoCard({ todo, onUpdate }: TodoCardProps) {
+interface TodoCardProps {
+  todo: TodoType;
+}
+
+export default function TodoCard({ todo }: TodoCardProps) {
+  const { userId } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(todo.title);
   const [newTask, setNewTask] = useState("");
   const [isExpanded, setIsExpanded] = useState(true);
 
+  const updateTodo = useMutation(api.todos.updateTodo);
+  const deleteTodo = useMutation(api.todos.deleteTodo);
+  const createTask = useMutation(api.todos.createTask);
+
   const handleUpdate = async () => {
     if (!title.trim()) return;
-    await fetch(`/api/todos/${todo.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title }),
-    });
+    await updateTodo({ todoId: todo.id, title });
     setIsEditing(false);
-    onUpdate();
   };
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this todo?")) return;
-    await fetch(`/api/todos/${todo.id}`, {
-      method: "DELETE",
-    });
-    onUpdate();
+    await deleteTodo({ todoId: todo.id });
   };
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTask.trim()) return;
-    await fetch(`/api/todos/${todo.id}/tasks`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: newTask }),
-    });
+    if (!newTask.trim() || !userId) return;
+    await createTask({ todoId: todo.id, userId, title: newTask });
     setNewTask("");
-    onUpdate();
   };
 
   const completedTasks = todo.tasks.filter((t) => t.completed).length;
@@ -125,7 +141,6 @@ export default function TodoCard({ todo, onUpdate }: TodoCardProps) {
                   key={task.id}
                   task={task}
                   todoId={todo.id}
-                  onUpdate={onUpdate}
                 />
               ))}
             </div>

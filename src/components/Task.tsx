@@ -1,58 +1,62 @@
 "use client";
 
 import { useState } from "react";
-import { Task as TaskType } from "@/types/todo";
+import { useMutation } from "convex/react";
+import { useAuth } from "@clerk/nextjs";
+import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
 import Subtask from "./Subtask";
+
+interface TaskType {
+  id: Id<"tasks">;
+  title: string;
+  completed: boolean;
+  subtasks: {
+    id: Id<"subtasks">;
+    title: string;
+    completed: boolean;
+    createdAt: string;
+    updatedAt: string;
+  }[];
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface TaskProps {
   task: TaskType;
-  todoId: string;
-  onUpdate: () => void;
+  todoId: Id<"todos">;
 }
 
-export default function Task({ task, todoId, onUpdate }: TaskProps) {
+export default function Task({ task, todoId }: TaskProps) {
+  const { userId } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(task.title);
   const [newSubtask, setNewSubtask] = useState("");
   const [showSubtasks, setShowSubtasks] = useState(true);
 
+  const updateTask = useMutation(api.todos.updateTask);
+  const deleteTask = useMutation(api.todos.deleteTask);
+  const createSubtask = useMutation(api.todos.createSubtask);
+
   const handleToggleComplete = async () => {
-    await fetch(`/api/todos/${todoId}/tasks/${task.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ completed: !task.completed }),
-    });
-    onUpdate();
+    await updateTask({ taskId: task.id, completed: !task.completed });
   };
 
   const handleUpdate = async () => {
     if (!title.trim()) return;
-    await fetch(`/api/todos/${todoId}/tasks/${task.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title }),
-    });
+    await updateTask({ taskId: task.id, title });
     setIsEditing(false);
-    onUpdate();
   };
 
   const handleDelete = async () => {
-    await fetch(`/api/todos/${todoId}/tasks/${task.id}`, {
-      method: "DELETE",
-    });
-    onUpdate();
+    await deleteTask({ taskId: task.id });
   };
 
   const handleAddSubtask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSubtask.trim()) return;
-    await fetch(`/api/todos/${todoId}/tasks/${task.id}/subtasks`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: newSubtask }),
-    });
+    if (!newSubtask.trim() || !userId) return;
+    await createSubtask({ taskId: task.id, userId, title: newSubtask });
     setNewSubtask("");
-    onUpdate();
   };
 
   const completedSubtasks = task.subtasks.filter((s) => s.completed).length;
@@ -132,9 +136,6 @@ export default function Task({ task, todoId, onUpdate }: TaskProps) {
             <Subtask
               key={subtask.id}
               subtask={subtask}
-              todoId={todoId}
-              taskId={task.id}
-              onUpdate={onUpdate}
             />
           ))}
           
